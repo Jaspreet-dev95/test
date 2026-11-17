@@ -1,0 +1,28 @@
+name: Check CP24 HD stream
+on:
+  push:
+    branches: [main]
+    paths:
+      - build_cp24_hd.py
+      - .github/workflows/cp24-hd-auto.yml
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CP24_HD_URL: ${{ secrets.CP24_HD_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate provider-supplied stream
+        run: python3 build_cp24_hd.py
+      - name: Publish updated playlist
+        run: |
+          git add cp24-hd-auto.m3u
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "Update CP24 stream status"
+          git push
